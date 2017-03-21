@@ -57,7 +57,7 @@ class ExecuteUnit(object):
                     self.context.switch_to_strategy(i, j)
                     s.on_init(self.context)
 
-    @deprecated
+    # @deprecated
     def _parse_pcontracts(self, pcontracts):
         # @TODO test
         code2strpcon, exch_period2strpcon = \
@@ -73,11 +73,17 @@ class ExecuteUnit(object):
                 else:
                     # "*.xxx"
                     # "*.xxx_period"
-                    k = strpcon.split('.')[1]
+                    k = strpcon.split('.', 1)[1]
                     for key, value in exch_period2strpcon.iteritems():
                         if '-' in k:
-                            if k == key:
-                                rst += value
+                            if '*' in k:
+                                # *-1.Day
+                                k1 = k.split('-')[1]
+                                if k1 == key.split('-')[1]:
+                                    rst += value
+                            else:
+                                if k == key:
+                                    rst += value
                         elif k == key.split('-')[0]:
                                 rst += value
             else:

@@ -7,6 +7,7 @@
 # @date 2015-12-09
 
 from quantdigger import *
+from datetime import datetime, timedelta
 
 class DemoStrategy(Strategy):
     """ 策略A1 """
@@ -44,22 +45,24 @@ class DemoStrategy(Strategy):
         return
 
     def on_exit(self, ctx):
-        print("策略运行结束．")
+        print("strategy finished．")
         return
 
 
 
 if __name__ == '__main__':
+    print "begin=", datetime.now()
     # 
-    set_symbols(['*.SH'])
+    # set_symbols(['*.*-1.Day'])
     algo = DemoStrategy('A1')
-    profile = add_strategy([algo], { 'capital': 500000000.0 })
+    profile = add_strategy([algo], { 'capital': 10000000.0 })
 
     run()
 
     from quantdigger.digger import finance, plotting
     curve = finance.create_equity_curve(profile.all_holdings())
-    #plotting.plot_strategy(profile.data('AA.SHFE-1.Minute'), profile.technicals(0),
-                            #profile.deals(0), curve.equity.values)
+    # plotting.plot_strategy(profile.data('AA.SHFE-1.Minute'), profile.technicals(0),
+    #                         profile.deals(0), curve.equity.values)
     ## 绘制净值曲线
     plotting.plot_curves([curve.networth])
+    print "end=", datetime.now()

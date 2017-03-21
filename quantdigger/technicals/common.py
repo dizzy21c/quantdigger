@@ -46,12 +46,43 @@ class MA(TechnicalBase):
         self.widget = widget
         self.plot_line(self.values, self.style, lw=self.lw)
 
+@register_tech('EMA')
+class EMA(TechnicalBase):
+    """ 移动平均线指标。 """
+    @tech_init
+    def __init__(self, data, n, name='EMA',
+                 style='y', lw=1):
+        """ data (NumberSeries/np.ndarray/list) """
+        super(EMA, self).__init__(name)
+        # 必须的函数参数
+        self._args = [ndarray(data), n]
+
+    def _rolling_algo(self, data, n, i):
+        """ 逐步运行函数。"""
+        ## @todo 因为用了向量化方法，速度降低
+        return (talib.EMA(data, n)[i], )
+
+    def _vector_algo(self, data, n):
+        """向量化运行, 结果必须赋值给self.values。
+
+        Args:
+            data (np.ndarray): 数据
+            n (int): 时间窗口大小
+        """
+        ## @NOTE self.values为保留字段！
+        # 绘图和指标基类都会用到self.values
+        self.values = talib.EMA(data, n)
+
+    def plot(self, widget):
+        """ 绘图，参数可由UI调整。 """
+        self.widget = widget
+        self.plot_line(self.values, self.style, lw=self.lw)
 
 @register_tech('BOLL')
 class BOLL(TechnicalBase):
     """ 布林带指标。 """
     @tech_init
-    def __init__(self, data, n, name='BOLL',
+    def __init__(self, data, n, up = 2, dn = 2, name='BOLL',
                  styles=('y', 'b', 'g'), lw=1):
         super(BOLL, self).__init__(name)
         ### @TODO 只有在逐步运算中需给self.values先赋值,
@@ -61,7 +92,7 @@ class BOLL(TechnicalBase):
                 #('middler', []),
                 #('lower', [])
                 #])
-        self._args = [ndarray(data), n, 2, 2]
+        self._args = [ndarray(data), n, up, dn]
 
     def _rolling_algo(self, data, n, a1, a2, i):
         """ 逐步运行函数。"""
@@ -134,6 +165,46 @@ class BOLL(TechnicalBase):
         #widget.set_yticks([30,70])
         #widget.text(0.025, 0.95, 'rsi (14)', va='top', transform=widget.transAxes, fontsize=textsize)
 
+@register_tech('MACD')
+class MACD(TechnicalBase):
+    @tech_init
+    def __init__(self, data, nfast=12, nslow=26, signal=9, name='MACD',
+                 styles=('y', 'b', 'g'), lw=1):
+        super(MACD, self).__init__(name)
+        ### @TODO 只有在逐步运算中需给self.values先赋值,
+        ## 去掉逐步运算后删除
+        # self.values = OrderedDict([
+        # ('upper', []),
+        # ('middler', []),
+        # ('lower', [])
+        # ])
+        self._args = [ndarray(data), nslow, nfast, signal]
+
+
+    def _rolling_algo(self, data, fastperiod, slowperiod, signalperiod, i):
+        """ 逐步运行函数。"""
+        macd, signal, hist = talib.MACD(data, fastperiod, slowperiod, signalperiod)
+        return (macd[i], signal[i], hist[i])
+
+
+    def _vector_algo(self, data, fastperiod, slowperiod, signalperiod):
+        """向量化运行"""
+        macd, signal, hist = talib.MACD(data, fastperiod, slowperiod, signalperiod)
+        self.values = {
+            'dif': macd,
+            'dea': signal,
+            'macd': hist * 2
+        }
+
+
+    def plot(self, widget):
+        """ 绘图，参数可由UI调整。 """
+        self.widget = widget
+        fillcolor = 'darkslategrey'
+        self.widget.plot(self.values["dif"], self.styles[0], lw=self.lw)
+        self.widget.plot(self.values["dea"], self.styles[1], lw=self.lw)
+        self.widget.fill_between(self.values["macd"], 0, alpha=0.5, facecolor=fillcolor, edgecolor=fillcolor)
+
 
 #class MACD(TechnicalBase):
     #@create_attributes
@@ -204,4 +275,4 @@ class LineWithX(Plotter):
         self.plot_line(self.xdata, self.values, self.style, lw=self.lw, ms=self.ms)
 
 
-__all__ = ['MA', 'BOLL', 'Volume', 'Line', 'LineWithX']
+__all__ = ['MA', 'BOLL', 'EMA', 'MACD', 'Volume', 'Line', 'LineWithX']

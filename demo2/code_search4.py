@@ -7,7 +7,7 @@
 # @date 2015-12-09
 
 from quantdigger import *
-
+from threading import Thread, Condition
 class DemoStrategy(Strategy):
     """ 策略A1 """
     def __init__(self, name):
@@ -47,13 +47,30 @@ class DemoStrategy(Strategy):
         print("策略运行结束．")
         return
 
+class Find(Thread):
+    def __init__(self, contract, dt_start, dt_end, strategy, lock, file):
+        Thread.__init__(self)
+        self._contract = contract
+        self._begdate = dt_start
+        self._enddate = dt_end
+        self._strategy = strategy
+
+    def run(self):
+        set_symbols(self._contract, dt_start=self._begdate)
+        algo = DemoStrategy(self._strategy, self._enddate, lock, file)
+        profile = add_strategy([algo], {'capital': 500000.0})
+        run()
+        # try:
+        #     run()
+        # except:
+        #     print 'calc error:' + ' '.join(self._contract)
 
 
 if __name__ == '__main__':
     # 
-    set_symbols(['*.SH'])
+    set_symbols(['*.*-1.Day'])
     algo = DemoStrategy('A1')
-    profile = add_strategy([algo], { 'capital': 500000000.0 })
+    profile = add_strategy([algo], { 'capital': 10000000.0 })
 
     run()
 
